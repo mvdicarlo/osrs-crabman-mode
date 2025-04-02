@@ -100,16 +100,14 @@ public class CrabmanModeModePlugin extends Plugin {
     private static final String GBM_COUNT_STRING = "!gbmcount";
     private static final String GBM_RECENT_STRING = "!gbmrecent";
 
-    final int COMBAT_ACHIEVEMENT_BUTTON = 20;
     final int COLLECTION_LOG_GROUP_ID = 621;
-    final int COLLECTION_VIEW = 36;
-    final int COLLECTION_VIEW_SCROLLBAR = 37;
-    final int COLLECTION_VIEW_HEADER = 19;
+    final int COMBAT_ACHIEVEMENT_BUTTON = 40697877;
+    final int COLLECTION_VIEW_SCROLLBAR = 40697894;
 
-    final int COLLECTION_VIEW_CATEGORIES_CONTAINER = 28;
-    final int COLLECTION_VIEW_CATEGORIES_RECTANGLE = 33;
-    final int COLLECTION_VIEW_CATEGORIES_TEXT = 34;
-    final int COLLECTION_VIEW_CATEGORIES_SCROLLBAR = 28;
+    final int COLLECTION_VIEW_CATEGORIES_CONTAINER = 40697885;
+    final int COLLECTION_VIEW_CATEGORIES_RECTANGLE = 40697890;
+    final int COLLECTION_VIEW_CATEGORIES_TEXT = 40697891;
+    final int COLLECTION_VIEW_CATEGORIES_SCROLLBAR = 40697886;
 
     final int MENU_INSPECT = 2;
     final int MENU_DELETE = 3;
@@ -121,7 +119,7 @@ public class CrabmanModeModePlugin extends Plugin {
     private static final int GE_SEARCH_BUILD_SCRIPT = 751;
 
     private static final int COLLECTION_LOG_OPEN_OTHER = 2728;
-    private static final int COLLECTION_LOG_DRAW_LIST = 2730;
+    private static final int COLLECTION_LOG_DRAW_LIST = 2731;
     private static final int COLLECTION_LOG_ITEM_CLICK = 2733;
 
     static final Set<Integer> OWNED_INVENTORY_IDS = ImmutableSet.of(
@@ -266,7 +264,7 @@ public class CrabmanModeModePlugin extends Plugin {
             return;
         }
 
-        Widget collectionViewHeader = client.getWidget(COLLECTION_LOG_GROUP_ID, COLLECTION_VIEW_HEADER);
+        Widget collectionViewHeader = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_HEADER);
         collectionLog.openCollectionLog(collectionViewHeader);
     }
 
@@ -453,7 +451,7 @@ public class CrabmanModeModePlugin extends Plugin {
     }
 
     void killSearchResults() {
-        Widget grandExchangeSearchResults = client.getWidget(162, GE_SEARCH_RESULTS);
+        Widget grandExchangeSearchResults = client.getWidget(ComponentID.CHATBOX_GE_SEARCH_RESULTS);
 
         if (grandExchangeSearchResults == null) {
             return;
