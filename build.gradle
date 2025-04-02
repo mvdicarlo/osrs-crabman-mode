@@ -31,7 +31,7 @@ group = 'mvdicarlo'
 version = '1.0.0'
 
 application {
-    mainClass = 'mvdicarlo.crabmanmode.CrabmanModeModePluginTest'
+    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
 }
 
 // Task to run the plugin for testing
@@ -39,7 +39,7 @@ task runPlugin(type: JavaExec) {
     description = 'Run the plugin with RuneLite for testing'
     group = 'application'
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'mvdicarlo.crabmanmode.CrabmanModeModePluginTest'
+    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
     
     // Add JVM arguments if needed
     jvmArgs = ['-ea', '-Xmx512m']
