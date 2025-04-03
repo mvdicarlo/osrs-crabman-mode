@@ -1,6 +1,5 @@
 package mvdicarlo.crabmanmode;
 
-
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.client.callback.ClientThread;
@@ -18,9 +17,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Singleton
 @Slf4j
@@ -43,6 +45,9 @@ public class CrabmanModePanel extends PluginPanel
     private ChatboxPanelManager chatboxPanelManager;
 
     JPanel itemsPanel;
+
+    private List<ItemObject> allItems = new ArrayList<>();
+    private String currentSearchText = "";
 
     CrabmanModePanel()
     {
@@ -75,6 +80,24 @@ public class CrabmanModePanel extends PluginPanel
         searchBar.setIcon(IconTextField.Icon.SEARCH);
         searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
+
+        // Add document listener to filter as you type
+        searchBar.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filterItems(searchBar.getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filterItems(searchBar.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filterItems(searchBar.getText());
+            }
+        });
         selectionPanel.add(searchBar);
 
         // Show untradeable items
@@ -84,13 +107,12 @@ public class CrabmanModePanel extends PluginPanel
         showUntradeableItems.setSelected(true);
         selectionPanel.add(showUntradeableItems);
 
-        // TO-DO: Add a search function
-
         // Button to search bank
         JButton filterButton = new JButton();
         filterButton.addActionListener((actionEvent) ->
         {
-            clientThread.invokeLater(() -> plugin.unlockFilter(showUntradeableItems.isSelected(), (SortOption) sortDropDown.getSelectedItem(), searchBar.getText()));
+            currentSearchText = searchBar.getText();
+            clientThread.invokeLater(() -> plugin.unlockFilter(showUntradeableItems.isSelected(), (SortOption) sortDropDown.getSelectedItem(), currentSearchText));
         });
         filterButton.setText("View Items");
         filterButton.setFocusable(false);
@@ -108,97 +130,111 @@ public class CrabmanModePanel extends PluginPanel
 
     public void displayItems(List<ItemObject> filteredItems)
     {
-        SwingUtilities.invokeLater((() -> {
-            SwingUtil.fastRemoveAll(itemsPanel);
+        this.allItems = new ArrayList<>(filteredItems);
 
-            if (!filteredItems.isEmpty())
-            {
-                //print item names
-                JPanel titlePanel = new JPanel();
-                titlePanel.setLayout(new BorderLayout());
+        if (currentSearchText != null && !currentSearchText.isEmpty()) {
+            filterItems(currentSearchText);
+        } else {
+            SwingUtilities.invokeLater((() -> {
+                updateItemsDisplay(filteredItems);
+            }));
+        }
+    }
 
-                //Get title and unlock count
-                JLabel titleLabel = new JLabel();
-                titleLabel.setText("Group Bronzeman Unlocks: " + Integer.toString(filteredItems.size()));
-                titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+    private void filterItems(String searchText) {
+        currentSearchText = searchText;
 
-                // Add to panel
-                titlePanel.add(titleLabel, BorderLayout.CENTER);
-                itemsPanel.add(titlePanel);
+        if (searchText == null || searchText.isEmpty()) {
+            SwingUtilities.invokeLater(() -> updateItemsDisplay(allItems));
+            return;
+        }
 
-                JPanel itemContainer = new JPanel();
-                EmptyBorder itemBorder = new EmptyBorder(10, 10, 10, 10);
+        List<ItemObject> filtered = allItems.stream()
+            .filter(item -> item.getName().toLowerCase().contains(searchText.toLowerCase()))
+            .collect(Collectors.toList());
 
-                itemContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
-                itemContainer.setBorder(itemBorder);
-                itemContainer.setLayout(new GridLayout(0, COLUMN_SIZE, 1, 1));
+        SwingUtilities.invokeLater(() -> updateItemsDisplay(filtered));
+    }
 
-                for (ItemObject item : filteredItems) {
-                    JPanel itemPanel = new JPanel();
-                    JLabel itemLabel = new JLabel();
+    private void updateItemsDisplay(List<ItemObject> items) {
+        SwingUtil.fastRemoveAll(itemsPanel);
 
-                    itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                    itemLabel.setVerticalAlignment(SwingConstants.CENTER);
-                    item.getIcon().addTo(itemLabel);
-                    itemLabel.setSize(item.getIcon().getWidth(), item.getIcon().getHeight());
-                    itemLabel.setMaximumSize(new Dimension(ICON_WIDTH, ICON_HEIGHT));
-                    itemLabel.setToolTipText(item.getName());
+        if (!items.isEmpty()) {
+            JPanel titlePanel = new JPanel();
+            titlePanel.setLayout(new BorderLayout());
 
-                    // Create popup menu
-                    final JPopupMenu popupMenu = new JPopupMenu();
-                    popupMenu.setBorder(itemBorder);
-                    itemPanel.setComponentPopupMenu(popupMenu);
+            JLabel titleLabel = new JLabel();
+            titleLabel.setText("Group Bronzeman Unlocks: " + Integer.toString(items.size()));
+            titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-                    final JMenuItem inspectButton = new JMenuItem("Inspect " + item.getName());
-                    inspectButton.addActionListener(e ->
-                    {
-                        final ChatMessageBuilder examination = new ChatMessageBuilder()
+            titlePanel.add(titleLabel, BorderLayout.CENTER);
+            itemsPanel.add(titlePanel);
+
+            JPanel itemContainer = new JPanel();
+            EmptyBorder itemBorder = new EmptyBorder(10, 10, 10, 10);
+
+            itemContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            itemContainer.setBorder(itemBorder);
+            itemContainer.setLayout(new GridLayout(0, COLUMN_SIZE, 1, 1));
+
+            for (ItemObject item : items) {
+                JPanel itemPanel = new JPanel();
+                JLabel itemLabel = new JLabel();
+
+                itemLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                itemLabel.setVerticalAlignment(SwingConstants.CENTER);
+                item.getIcon().addTo(itemLabel);
+                itemLabel.setSize(item.getIcon().getWidth(), item.getIcon().getHeight());
+                itemLabel.setMaximumSize(new Dimension(ICON_WIDTH, ICON_HEIGHT));
+                itemLabel.setToolTipText(item.getName());
+
+                final JPopupMenu popupMenu = new JPopupMenu();
+                popupMenu.setBorder(itemBorder);
+                itemPanel.setComponentPopupMenu(popupMenu);
+
+                final JMenuItem inspectButton = new JMenuItem("Inspect " + item.getName());
+                inspectButton.addActionListener(e -> {
+                    final ChatMessageBuilder examination = new ChatMessageBuilder()
                         .append(ChatColorType.NORMAL)
                         .append("This is an unlocked item called '" + item.getName() + "'.");
 
-                        chatMessageManager.queue(QueuedMessage.builder()
-                                .type(ChatMessageType.ITEM_EXAMINE)
-                                .runeLiteFormattedMessage(examination.build())
-                                .build());
-                    });
-                    popupMenu.add(inspectButton);
-                    
-                    final JMenuItem deleteButton = new JMenuItem("Remove " + item.getName());
-                    deleteButton.addActionListener(e ->
-                    {
-                        if (plugin.isDeletionConfirmed("Do you want to re-lock: " + item.getName(), "Warning"))
-                        {
-                            plugin.queueItemDelete(item.getId());
-                            plugin.sendChatMessage("Item '" + item.getName() + "' is no longer unlocked.");
-                            displayItems(new ArrayList<ItemObject>()); // Redraw the panel
-                        }
-                    });
-                    popupMenu.add(deleteButton);
+                    chatMessageManager.queue(QueuedMessage.builder()
+                            .type(ChatMessageType.ITEM_EXAMINE)
+                            .runeLiteFormattedMessage(examination.build())
+                            .build());
+                });
+                popupMenu.add(inspectButton);
 
-                    itemPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-                    itemPanel.add(itemLabel);
-                    itemContainer.add(itemPanel);
-                }
-                if (filteredItems.size() % COLUMN_SIZE != 0)
-                {
-                    for (int i = 0; i < COLUMN_SIZE - (filteredItems.size() % COLUMN_SIZE); i++)
-                    {
-                        JPanel panel = new JPanel();
-                        panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-                        itemContainer.add(panel);
+                final JMenuItem deleteButton = new JMenuItem("Remove " + item.getName());
+                deleteButton.addActionListener(e -> {
+                    if (plugin.isDeletionConfirmed("Do you want to re-lock: " + item.getName(), "Warning")) {
+                        plugin.queueItemDelete(item.getId());
+                        plugin.sendChatMessage("Item '" + item.getName() + "' is no longer unlocked.");
+                        displayItems(new ArrayList<ItemObject>());
                     }
+                });
+                popupMenu.add(deleteButton);
+
+                itemPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+                itemPanel.add(itemLabel);
+                itemContainer.add(itemPanel);
+            }
+            if (items.size() % COLUMN_SIZE != 0) {
+                for (int i = 0; i < COLUMN_SIZE - (items.size() % COLUMN_SIZE); i++) {
+                    JPanel panel = new JPanel();
+                    panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                    itemContainer.add(panel);
                 }
-
-                itemsPanel.add(itemContainer);
-            }
-            else {
-                displayMessage("No items found.");
             }
 
-            repaint();
-            revalidate();
-        }));
+            itemsPanel.add(itemContainer);
+        } else {
+            displayMessage("No items found.");
+        }
+
+        repaint();
+        revalidate();
     }
 
     public void displayMessage(final String message)
