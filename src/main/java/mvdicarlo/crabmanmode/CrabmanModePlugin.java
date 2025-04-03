@@ -394,7 +394,7 @@ public class CrabmanModePlugin extends Plugin {
 
             AsyncBufferedImage icon = itemManager.getImage(unlockedItem.getItemId());
 
-            ItemObject item = new ItemObject(unlockedItem.getItemId(), unlockedItem.getItemName(), tradeable, icon);
+            ItemObject item = new ItemObject(unlockedItem.getItemId(), unlockedItem.getItemName(), tradeable, unlockedItem.getAcquiredOn(), icon);
             filteredItems.add(item);
         }
 

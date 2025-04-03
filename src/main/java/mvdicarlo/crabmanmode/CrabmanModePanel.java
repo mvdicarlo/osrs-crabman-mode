@@ -21,6 +21,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,7 @@ public class CrabmanModePanel extends PluginPanel
 
     private List<ItemObject> allItems = new ArrayList<>();
     private String currentSearchText = "";
+    private SortOption currentSortOption = SortOption.NEW_TO_OLD; // Default sort option
 
     CrabmanModePanel()
     {
@@ -68,6 +70,10 @@ public class CrabmanModePanel extends PluginPanel
         JComboBox sortDropDown = new JComboBox(SortOption.values());
         sortDropDown.setFocusable(false);
         sortDropDown.setRenderer(new SortOptionDropdownRenderer());
+        sortDropDown.addActionListener(e -> {
+            currentSortOption = (SortOption) sortDropDown.getSelectedItem();
+            applyFiltersAndSort();
+        });
         selectionPanel.add(sortDropDown);
 
         // Search label
@@ -131,29 +137,48 @@ public class CrabmanModePanel extends PluginPanel
     public void displayItems(List<ItemObject> filteredItems)
     {
         this.allItems = new ArrayList<>(filteredItems);
+        applyFiltersAndSort();
+    }
 
-        if (currentSearchText != null && !currentSearchText.isEmpty()) {
-            filterItems(currentSearchText);
-        } else {
-            SwingUtilities.invokeLater((() -> {
-                updateItemsDisplay(filteredItems);
-            }));
+    private void applyFiltersAndSort()
+    {
+        // Filter items based on search text
+        List<ItemObject> filteredItems = allItems.stream()
+            .filter(item -> currentSearchText.isEmpty() || 
+                   item.getName().toLowerCase().contains(currentSearchText.toLowerCase()))
+            .collect(Collectors.toList());
+
+        // Sort items based on the selected sort option
+        sortItems(filteredItems);
+
+        // Update the display
+        SwingUtilities.invokeLater(() -> updateItemsDisplay(filteredItems));
+    }
+
+    private void sortItems(List<ItemObject> items)
+    {
+        switch (currentSortOption)
+        {
+            case NEW_TO_OLD:
+                // Sort by acquiredOn in descending order (newest first)
+                items.sort((item1, item2) -> item2.getAcquiredOn().compareTo(item1.getAcquiredOn()));
+                break;
+            case OLD_TO_NEW:
+                // Sort by acquiredOn in ascending order (oldest first)
+                items.sort(Comparator.comparing(ItemObject::getAcquiredOn));
+                break;
+            case ALPHABETICAL_ASC:
+                items.sort(Comparator.comparing(ItemObject::getName));
+                break;
+            case ALPHABETICAL_DESC:
+                items.sort(Comparator.comparing(ItemObject::getName).reversed());
+                break;
         }
     }
 
     private void filterItems(String searchText) {
         currentSearchText = searchText;
-
-        if (searchText == null || searchText.isEmpty()) {
-            SwingUtilities.invokeLater(() -> updateItemsDisplay(allItems));
-            return;
-        }
-
-        List<ItemObject> filtered = allItems.stream()
-            .filter(item -> item.getName().toLowerCase().contains(searchText.toLowerCase()))
-            .collect(Collectors.toList());
-
-        SwingUtilities.invokeLater(() -> updateItemsDisplay(filtered));
+        applyFiltersAndSort();
     }
 
     private void updateItemsDisplay(List<ItemObject> items) {
