@@ -186,6 +186,7 @@ public class CrabmanModePlugin extends Plugin {
     private String enabledCrabman = "";
     private int bronzemanIconOffset = -1; // offset for bronzeman icon
     private boolean onSeasonalWorld;
+    private boolean onPvpArenaWorld;
 
     private final DatabaseRepository databaseRepo = new DatabaseRepository();
 
@@ -200,6 +201,7 @@ public class CrabmanModePlugin extends Plugin {
     protected void startUp() throws Exception {
         super.startUp();
         onSeasonalWorld = false;
+        onPvpArenaWorld = false;    
         databaseRepo.setGson(gson);
         databaseRepo.setHttpClient(okHttpClient);
         updateNamesBronzeman();
@@ -231,8 +233,9 @@ public class CrabmanModePlugin extends Plugin {
         clientThread.invoke(() -> {
             if (client.getGameState() == GameState.LOGGED_IN) {
                 onSeasonalWorld = isSeasonalWorld(client.getWorld());
-                // A player can not be a bronzeman on a seasonal world.
-                if (!onSeasonalWorld) {
+                onPvpArenaWorld = isPvpArenaWorld(client.getWorld());
+                // A player can not be a bronzeman on a seasonal or pvp arena world.
+                if (!onSeasonalWorld && !onPvpArenaWorld) {
                     setChatboxName(getNameChatbox());
                 }
             }
@@ -264,6 +267,7 @@ public class CrabmanModePlugin extends Plugin {
             loadResources();
 
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
+            onPvpArenaWorld = isPvpArenaWorld(client.getWorld());
         }
         if (e.getGameState() == GameState.LOGIN_SCREEN) {
             databaseRepo.close();
@@ -294,7 +298,7 @@ public class CrabmanModePlugin extends Plugin {
 
     @Subscribe
     public void onScriptCallbackEvent(ScriptCallbackEvent scriptCallbackEvent) {
-        if (scriptCallbackEvent.getEventName().equals(SCRIPT_EVENT_SET_CHATBOX_INPUT) && !onSeasonalWorld) {
+        if (scriptCallbackEvent.getEventName().equals(SCRIPT_EVENT_SET_CHATBOX_INPUT) && !onSeasonalWorld && !onPvpArenaWorld) {
             setChatboxName(getNameChatbox());
         }
     }
@@ -425,7 +429,7 @@ public class CrabmanModePlugin extends Plugin {
 
     /** Unlocks all items in the given item container. **/
     public void unlockItemContainerItems(ItemContainer itemContainer) {
-        if (onSeasonalWorld) {
+        if (onSeasonalWorld || onPvpArenaWorld) {
             return;
         }
         for (Item i : itemContainer.getItems()) {
@@ -642,6 +646,22 @@ public class CrabmanModePlugin extends Plugin {
     }
 
     /**
+     * Checks if the world is a pvp arena world.
+     *
+     * @param worldNumber number of the world to check.
+     * @return boolean true/false if it is a pvp arena world or not.
+     */
+    private boolean isPvpArenaWorld(int worldNumber) {
+        WorldResult worlds = worldService.getWorlds();
+        if (worlds == null) {
+            return false;
+        }
+
+        World world = worlds.findWorld(worldNumber);
+        return world != null && world.getTypes().contains(WorldType.PVP_ARENA);
+    }
+
+    /**
      * Checks if the given message was sent by the player
      *
      * @param chatMessage number of the world to check.
@@ -779,7 +799,7 @@ public class CrabmanModePlugin extends Plugin {
         }
 
         int world = player.getWorld();
-        return !isSeasonalWorld(world);
+        return !isSeasonalWorld(world) && !isPvpArenaWorld(world);
     }
 
     private void OnUnlocksCountCommand(ChatMessage chatMessage, String message) {
