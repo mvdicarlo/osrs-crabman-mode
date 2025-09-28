@@ -2,15 +2,18 @@ package mvdicarlo.crabmanmode;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class FirebaseTableApi implements UnlockedItemTableApi {
     private final String partitionKey = "UnlockedItem";
     private final OkHttpClient httpClient;
@@ -42,6 +45,9 @@ public class FirebaseTableApi implements UnlockedItemTableApi {
         Type type = new TypeToken<GetResponse>() {
         }.getType();
         GetResponse response = gson.fromJson(jsonResponse, type);
+        if (response == null || response.value == null) {
+            return null;
+        }
 
         return this.mapToEntity(response.value);
     }
@@ -49,6 +55,7 @@ public class FirebaseTableApi implements UnlockedItemTableApi {
     @Override
     public List<UnlockedItemEntity> listEntities() throws Exception {
         String url = this.url + "/" + partitionKey + ".json";
+        log.info("listEntities url: {}", url);
         Request request = createRequestBuilder(url)
                 .get()
                 .build();
@@ -57,6 +64,9 @@ public class FirebaseTableApi implements UnlockedItemTableApi {
         Type type = new TypeToken<ListResponse>() {
         }.getType();
         ListResponse response = gson.fromJson(jsonResponse, type);
+        if (response == null || response.value == null) {
+            return new ArrayList<>();
+        }
 
         return response.value.values().stream()
                 .map(this::mapToEntity)
@@ -75,7 +85,7 @@ public class FirebaseTableApi implements UnlockedItemTableApi {
     @Override
     public void insertEntity(UnlockedItemEntity entity) throws Exception {
         String url = this.url + "/" + partitionKey + "/" + entity.getItemId().toString() + ".json";
-        String jsonPayload = gson.toJson(entity.toMap());
+        String jsonPayload = gson.toJson(entityToMap(entity));
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonPayload);
         Request request = createRequestBuilder(url)
                 .put(body)

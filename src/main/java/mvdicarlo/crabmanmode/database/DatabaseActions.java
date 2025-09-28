@@ -153,6 +153,7 @@ public class DatabaseActions {
                 return result;
 
             } catch (Exception e) {
+                log.error("Failed to load items from database", e.getMessage());
                 throw new RuntimeException("Failed to load items from database", e);
             }
         }

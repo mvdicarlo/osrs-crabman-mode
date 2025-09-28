@@ -1,6 +1,8 @@
 package mvdicarlo.crabmanmode;
 
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,14 +53,14 @@ public class AzureTableApi implements UnlockedItemTableApi {
         }.getType();
         AzureTableResponse response = gson.fromJson(jsonResponse, type);
         return response.value.stream()
-                .map(UnlockedItemEntity::fromMap)
+                .map(this::mapToEntity)
                 .collect(Collectors.toList());
     }
 
     private UnlockedItemEntity parseJsonResponse(String jsonResponse) {
         Map<String, Object> map = gson.fromJson(jsonResponse, new TypeToken<Map<String, Object>>() {
         }.getType());
-        return UnlockedItemEntity.fromMap(map);
+        return this.mapToEntity(map);
     }
 
     public UnlockedItemEntity getEntity(String id) throws Exception {
@@ -100,7 +102,7 @@ public class AzureTableApi implements UnlockedItemTableApi {
 
     public void insertEntity(UnlockedItemEntity entity) throws Exception {
         String url = buildUrl("", "");
-        String jsonPayload = gson.toJson(entity.toMap());
+        String jsonPayload = gson.toJson(entityToMap(entity));
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonPayload);
         Request request = createRequestBuilder(url)
                 .post(body)
@@ -114,5 +116,24 @@ public class AzureTableApi implements UnlockedItemTableApi {
                 .url(url)
                 .header("Accept", "application/json")
                 .header("User-Agent", "CrabManModePlugin");
+    }
+
+
+    private Map<String, Object> entityToMap(UnlockedItemEntity entity) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("PartitionKey", partitionKey);
+        map.put("RowKey", entity.getItemId().toString());
+        map.put("ItemName", entity.getItemName());
+        map.put("AcquiredBy", entity.getAcquiredBy());
+        map.put("AcquiredOn", entity.getAcquiredOn().toString());
+        return map;
+    }
+
+    private UnlockedItemEntity mapToEntity(Map<String, Object> map) {
+        Integer itemId = Integer.parseInt((String) map.get("ItemId"));
+        String itemName = (String) map.get("ItemName");
+        String acquiredBy = (String) map.get("AcquiredBy");
+        OffsetDateTime acquiredOn = OffsetDateTime.parse((String) map.get("AcquiredOn"));
+        return new UnlockedItemEntity(itemName, itemId, acquiredBy, acquiredOn);
     }
 }

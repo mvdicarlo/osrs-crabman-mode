@@ -484,7 +484,7 @@ public class CrabmanModePlugin extends Plugin {
                     if (throwable != null) {
                         log.error("Failed to unlock item: " + unlockedItem.getItemName(), throwable);
                         sendChatMessage(
-                                "Failed to unlock item: " + unlockedItem.getItemName() + ". Check your SAS Token.");
+                                "Failed to unlock item: " + unlockedItem.getItemName() + ". Check your plugin configuration.");
                     } else {
                         log.debug("Successfully unlocked item: " + unlockedItem.getItemName());
                     }
@@ -554,8 +554,12 @@ public class CrabmanModePlugin extends Plugin {
     }
 
     private void initializeDatabase() {
-        if (config.azureSasUrl().isEmpty()) {
+        if (config.storageType() == StorageType.AZURE && config.azureSasUrl().isEmpty()) {
             log.info("No SAS URL string provided.");
+            databaseRepo.close();
+            return;
+        } else if (config.storageType() == StorageType.FIREBASE && config.firebaseRealtimeDatabaseUrl().isEmpty()) {
+            log.info("No firebase URL string provided.");
             databaseRepo.close();
             return;
         }
@@ -573,7 +577,7 @@ public class CrabmanModePlugin extends Plugin {
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to initialize new database repository", throwable);
-                        sendChatMessage("Failed to connect to database. Check your SAS Token.");
+                        sendChatMessage("Failed to connect to database. Check your plugin configuration.");
                     } else {
                         log.info("New database repository initialization completed successfully");
                     }
@@ -600,7 +604,7 @@ public class CrabmanModePlugin extends Plugin {
             });
 
             if (state == mvdicarlo.crabmanmode.database.DatabaseState.State.ERROR) {
-                sendChatMessage("Failed to connect to database. Check your SAS Token.");
+                sendChatMessage("Failed to connect to database. Check the bronzeman plugin configuration.");
             }
         }
     }

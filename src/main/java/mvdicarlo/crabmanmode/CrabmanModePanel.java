@@ -279,7 +279,7 @@ public class CrabmanModePanel extends PluginPanel {
         String message;
         switch (state) {
             case NOT_INITIALIZED:
-                message = "Database not initialized. Please configure your SAS Token.";
+                message = "Database not initialized. Please configure the plugin by providing an Azure SAS Token or Firebase Realtime Database URL.";
                 break;
             case INITIALIZING:
                 message = "Connecting to database...";
@@ -291,7 +291,7 @@ public class CrabmanModePanel extends PluginPanel {
                 message = "Database ready! Use the 'View Items' button to see unlocked items.";
                 break;
             case ERROR:
-                message = "Failed to connect to database. Please check your SAS Token.";
+                message = "Failed to connect to database. Please check your configuration.";
                 break;
             default:
                 message = "Unknown database state.";
