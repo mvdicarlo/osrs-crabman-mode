@@ -16,8 +16,17 @@ public interface CrabmanModeConfig extends Config {
         return "";
     }
 
-    @ConfigItem(secret = true, keyName = "databaseString", name = "Azure Storage Account SAS URL", position = 3, description = "The SAS Url string for your group storage account.")
-    default String databaseString() {
+    @ConfigItem(keyName = "storageType", name = "Storage", position = 3, description = "Specifies which storage option to use.")
+    default StorageType storageType() {
+        return StorageType.AZURE;
+    }
+
+    @ConfigItem(secret = true, keyName = "azureSasUrl", name = "Azure Storage Account SAS URL", position = 4, description = "The SAS Url string for your group storage account.")
+    default String azureSasUrl() {
+        return "";
+    }
+    @ConfigItem(secret = true, keyName = "firebaseRealtimeDatabaseUrl", name = "Firebase Realtime Database URL", position = 5, description = "The url to your firebase database.")
+    default String firebaseRealtimeDatabaseUrl() {
         return "";
     }
 }

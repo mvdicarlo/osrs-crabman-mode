@@ -356,7 +356,7 @@ public class CrabmanModePlugin extends Plugin {
                 updateNamesBronzeman();
             } else if (event.getKey().equals("enableCrabman")) {
                 updateAllowedCrabman();
-            } else if (event.getKey().equals("databaseString") || event.getKey().equals("databaseTable")) {
+            } else if (event.getKey().equals("azureSasUrl") || event.getKey().equals("databaseTable")) {
                 initializeDatabase();
             }
         }
@@ -554,7 +554,7 @@ public class CrabmanModePlugin extends Plugin {
     }
 
     private void initializeDatabase() {
-        if (config.databaseString().isEmpty()) {
+        if (config.azureSasUrl().isEmpty()) {
             log.info("No SAS URL string provided.");
             databaseRepo.close();
             return;
@@ -569,7 +569,7 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
 
-        databaseRepo.initialize(config.databaseString(), client.getLocalPlayer().getName())
+        databaseRepo.initialize(config.azureSasUrl(), client.getLocalPlayer().getName())
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to initialize new database repository", throwable);
