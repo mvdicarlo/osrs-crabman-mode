@@ -14,7 +14,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class AzureTableApi {
+public class AzureTableApi implements UnlockedItemTableApi {
+    private final String partitionKey = "UnlockedItem";
     private final OkHttpClient httpClient;
     private final String sasUrl;
     private final Gson gson;
@@ -60,8 +61,8 @@ public class AzureTableApi {
         return UnlockedItemEntity.fromMap(map);
     }
 
-    public UnlockedItemEntity getEntity(String partitionKey, String rowKey) throws Exception {
-        String url = buildUrl("(PartitionKey='" + partitionKey + "',RowKey='" + rowKey + "')", "");
+    public UnlockedItemEntity getEntity(String id) throws Exception {
+        String url = buildUrl("(PartitionKey='" + partitionKey + "',RowKey='" + id + "')", "");
         Request request = createRequestBuilder(url)
                 .get()
                 .build();
@@ -70,14 +71,14 @@ public class AzureTableApi {
         return entity;
     }
 
-    public List<UnlockedItemEntity> listEntities(String query) throws Exception {
-        String url = buildUrl("", "$filter=" + query);
-        Request request = createRequestBuilder(url)
-                .get()
-                .build();
-        String jsonResponse = sendRequest(request);
-        return parseJsonListResponse(jsonResponse);
-    }
+//    public List<UnlockedItemEntity> listEntities(String query) throws Exception {
+//        String url = buildUrl("", "$filter=" + query);
+//        Request request = createRequestBuilder(url)
+//                .get()
+//                .build();
+//        String jsonResponse = sendRequest(request);
+//        return parseJsonListResponse(jsonResponse);
+//    }
 
     public List<UnlockedItemEntity> listEntities() throws Exception {
         String url = buildUrl("", "");
@@ -88,8 +89,8 @@ public class AzureTableApi {
         return parseJsonListResponse(jsonResponse);
     }
 
-    public void deleteEntity(String partitionKey, String rowKey) throws Exception {
-        String url = buildUrl("(PartitionKey='" + partitionKey + "',RowKey='" + rowKey + "')", "");
+    public void deleteEntity(String id) throws Exception {
+        String url = buildUrl("(PartitionKey='" + partitionKey + "',RowKey='" + id + "')", "");
         Request request = createRequestBuilder(url)
                 .delete()
                 .header("If-Match", "*")

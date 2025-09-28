@@ -13,8 +13,7 @@ import java.util.function.Consumer;
 import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
-import mvdicarlo.crabmanmode.AzureTableApi;
-import mvdicarlo.crabmanmode.UnlockedItemEntity;
+import mvdicarlo.crabmanmode.*;
 import okhttp3.OkHttpClient;
 
 /**
@@ -36,7 +35,7 @@ public class DatabaseRepository {
     private java.util.concurrent.ScheduledFuture<?> syncTask;
 
     // Dependencies
-    private AzureTableApi api;
+    private UnlockedItemTableApi api;
     private String currentUser;
     private Gson gson;
     private OkHttpClient httpClient;
@@ -73,12 +72,17 @@ public class DatabaseRepository {
     /**
      * Initialize the database connection
      */
-    public CompletableFuture<Void> initialize(String sasUrl, String user) {
+    public CompletableFuture<Void> initialize(CrabmanModeConfig config, String user) {
         log.info("Initializing database connection for user: {}", user);
         databaseState.setState(DatabaseState.State.INITIALIZING);
 
         this.currentUser = user;
-        this.api = new AzureTableApi(sasUrl, gson, httpClient);
+
+        if (config.storageType() == StorageType.AZURE) {
+            this.api = new AzureTableApi(config.azureSasUrl(), gson, httpClient);
+        } else {
+            this.api = new FirebaseTableApi(config.firebaseRealtimeDatabaseUrl(), gson, httpClient);
+        }
 
         // Update action queue context
         updateActionQueueContext();

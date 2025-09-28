@@ -5,9 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UnlockedItemEntity {
-    public final static String PartitionKey = "UnlockedItem";
-    private String itemName;
     private Integer itemId;
+    private String itemName;
     private String acquiredBy;
     private OffsetDateTime acquiredOn;
 
@@ -44,19 +43,18 @@ public class UnlockedItemEntity {
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("PartitionKey", PartitionKey);
-        map.put("RowKey", itemId.toString());
+        map.put("ItemId", itemId);
         map.put("ItemName", itemName);
         map.put("AcquiredBy", acquiredBy);
-        // map.put("Timestamp", acquiredOn.toString()); // Fine to allow null
+        map.put("AcquiredOn", acquiredOn.toString());
         return map;
     }
 
     public static UnlockedItemEntity fromMap(Map<String, Object> map) {
         String itemName = (String) map.get("ItemName");
-        Integer itemId = Integer.parseInt((String) map.get("RowKey"));
+        Integer itemId = Integer.parseInt((String) map.get("ItemId"));
         String acquiredBy = (String) map.get("AcquiredBy");
-        OffsetDateTime acquiredOn = OffsetDateTime.parse((String) map.get("Timestamp"));
+        OffsetDateTime acquiredOn = OffsetDateTime.parse((String) map.get("AcquiredOn"));
         return new UnlockedItemEntity(itemName, itemId, acquiredBy, acquiredOn);
     }
 }

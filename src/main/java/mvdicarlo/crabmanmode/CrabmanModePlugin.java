@@ -569,7 +569,7 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
 
-        databaseRepo.initialize(config.azureSasUrl(), client.getLocalPlayer().getName())
+        databaseRepo.initialize(config, client.getLocalPlayer().getName())
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to initialize new database repository", throwable);

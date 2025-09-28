@@ -1,8 +1,9 @@
 package mvdicarlo.crabmanmode.database;
 
 import java.util.Map;
-import mvdicarlo.crabmanmode.AzureTableApi;
+
 import mvdicarlo.crabmanmode.UnlockedItemEntity;
+import mvdicarlo.crabmanmode.UnlockedItemTableApi;
 
 /**
  * Context provided to actions during execution.
@@ -10,12 +11,12 @@ import mvdicarlo.crabmanmode.UnlockedItemEntity;
  */
 public class ActionExecutionContext {
 
-    private final AzureTableApi api;
+    private final UnlockedItemTableApi api;
     private final Map<Integer, UnlockedItemEntity> localCache;
     private final String currentUser;
     private final boolean ready;
 
-    public ActionExecutionContext(AzureTableApi api,
+    public ActionExecutionContext(UnlockedItemTableApi api,
             Map<Integer, UnlockedItemEntity> localCache,
             String currentUser,
             boolean ready) {
@@ -28,7 +29,7 @@ public class ActionExecutionContext {
     /**
      * Get the Azure Table API instance
      */
-    public AzureTableApi getApi() {
+    public UnlockedItemTableApi getUnlockedItemTableApi() {
         return api;
     }
 

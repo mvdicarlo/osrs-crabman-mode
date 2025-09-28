@@ -51,7 +51,7 @@ public class DatabaseActions {
 
             try {
                 // Send to remote database
-                context.getApi().insertEntity(item);
+                context.getUnlockedItemTableApi().insertEntity(item);
                 log.debug("Successfully inserted item '{}' to remote database", item.getItemName());
                 return item;
 
@@ -100,7 +100,7 @@ public class DatabaseActions {
 
             try {
                 // Send delete to remote
-                context.getApi().deleteEntity(UnlockedItemEntity.PartitionKey, Integer.toString(itemId));
+                context.getUnlockedItemTableApi().deleteEntity(Integer.toString(itemId));
                 log.debug("Successfully deleted item ID {} from remote database", itemId);
                 return null;
 
@@ -145,7 +145,7 @@ public class DatabaseActions {
             Map<Integer, UnlockedItemEntity> result = new HashMap<>();
 
             try {
-                List<UnlockedItemEntity> items = context.getApi().listEntities();
+                List<UnlockedItemEntity> items = context.getUnlockedItemTableApi().listEntities();
                 for (UnlockedItemEntity item : items) {
                     result.put(item.getItemId(), item);
                 }
@@ -160,7 +160,7 @@ public class DatabaseActions {
         @Override
         public boolean canExecute(ActionExecutionContext context) {
             // Can execute even if not fully ready (used during initialization)
-            return context.getApi() != null;
+            return context.getUnlockedItemTableApi() != null;
         }
     }
 
@@ -194,8 +194,10 @@ public class DatabaseActions {
         @Override
         protected List<UnlockedItemEntity> executeInternal(ActionExecutionContext context) throws Exception {
             try {
-                String filter = "Timestamp%20gt%20datetime'" + since.toString() + "'";
-                List<UnlockedItemEntity> newItems = context.getApi().listEntities(filter);
+//                String filter = "Timestamp%20gt%20datetime'" + since.toString() + "'";
+//                List<UnlockedItemEntity> newItems = context.getApi().listEntities(filter);
+                // TODO: Add filter back
+                List<UnlockedItemEntity> newItems = context.getUnlockedItemTableApi().listEntities();
 
                 // Filter out items from current user and update local cache
                 List<UnlockedItemEntity> newItemsFromOthers = new ArrayList<>();
