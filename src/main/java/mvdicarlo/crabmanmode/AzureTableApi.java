@@ -125,15 +125,15 @@ public class AzureTableApi implements UnlockedItemTableApi {
         map.put("RowKey", entity.getItemId().toString());
         map.put("ItemName", entity.getItemName());
         map.put("AcquiredBy", entity.getAcquiredBy());
-        map.put("AcquiredOn", entity.getAcquiredOn().toString());
+        map.put("Timestamp", entity.getAcquiredOn().toString());
         return map;
     }
 
     private UnlockedItemEntity mapToEntity(Map<String, Object> map) {
-        Integer itemId = Integer.parseInt((String) map.get("ItemId"));
+        Integer itemId = Integer.parseInt((String) map.get("RowKey"));
         String itemName = (String) map.get("ItemName");
         String acquiredBy = (String) map.get("AcquiredBy");
-        OffsetDateTime acquiredOn = OffsetDateTime.parse((String) map.get("AcquiredOn"));
+        OffsetDateTime acquiredOn = OffsetDateTime.parse((String) map.get("Timestamp"));
         return new UnlockedItemEntity(itemName, itemId, acquiredBy, acquiredOn);
     }
 }
