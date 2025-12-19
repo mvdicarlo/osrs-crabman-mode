@@ -59,8 +59,9 @@ import net.runelite.api.IndexedSprite;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.MessageNode;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.Player;
 import net.runelite.api.WorldType;
@@ -70,7 +71,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
@@ -84,7 +85,6 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.WorldService;
-import net.runelite.client.game.chatbox.ChatboxPanelManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -150,9 +150,6 @@ public class CrabmanModePlugin extends Plugin {
     private WorldService worldService;
 
     @Inject
-    private ConfigManager configManager;
-
-    @Inject
     private ChatMessageManager chatMessageManager;
 
     @Inject
@@ -163,9 +160,6 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private CrabmanModeOverlay CrabmanModeOverlay;
-
-    @Inject
-    private ChatboxPanelManager chatboxPanelManager;
 
     @Inject
     private Gson gson;
@@ -500,8 +494,8 @@ public class CrabmanModePlugin extends Plugin {
 
     /** Unlocks default items like a bond to a newly made profile **/
     private void unlockDefaultItems() {
-        queueItemUnlock(ItemID.COINS_995, true);
-        queueItemUnlock(ItemID.OLD_SCHOOL_BOND, true);
+        queueItemUnlock(ItemID.COINS, true);
+        queueItemUnlock(ItemID.OSRS_BOND, true);
     }
 
     public void sendChatMessage(String chatMessage) {
@@ -518,7 +512,7 @@ public class CrabmanModePlugin extends Plugin {
     }
 
     void killSearchResults() {
-        Widget grandExchangeSearchResults = client.getWidget(ComponentID.CHATBOX_GE_SEARCH_RESULTS);
+        Widget grandExchangeSearchResults = client.getWidget(InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS);
 
         if (grandExchangeSearchResults == null) {
             return;
@@ -657,7 +651,7 @@ public class CrabmanModePlugin extends Plugin {
      * Update the player name in the chatbox input
      */
     private void setChatboxName(String name) {
-        Widget chatboxInput = client.getWidget(ComponentID.CHATBOX_INPUT);
+        Widget chatboxInput = client.getWidget(InterfaceID.Chatbox.INPUT);
         if (chatboxInput != null) {
             String text = chatboxInput.getText();
             int idx = text.indexOf(':');
@@ -676,7 +670,7 @@ public class CrabmanModePlugin extends Plugin {
     private String getNameChatbox() {
         Player player = client.getLocalPlayer();
         if (player != null) {
-            Widget chatboxInput = client.getWidget(ComponentID.CHATBOX_INPUT);
+            Widget chatboxInput = client.getWidget(InterfaceID.Chatbox.INPUT);
             String namePlusChannel = player.getName();
             if (chatboxInput != null) {
                 String text = chatboxInput.getText();
@@ -702,15 +696,16 @@ public class CrabmanModePlugin extends Plugin {
         }
 
         int iconIndex;
-        switch (client.getAccountType()) {
-            case IRONMAN:
+        int accountType = client.getVarbitValue(VarbitID.IRONMAN);
+        switch (accountType) {
+            case 1: // Ironman
                 iconIndex = IconID.IRONMAN.getIndex();
                 break;
-            case HARDCORE_IRONMAN:
-                iconIndex = IconID.HARDCORE_IRONMAN.getIndex();
-                break;
-            case ULTIMATE_IRONMAN:
+            case 2: // Ultimate Ironman
                 iconIndex = IconID.ULTIMATE_IRONMAN.getIndex();
+                break;
+            case 3: // Hardcore Ironman
+                iconIndex = IconID.HARDCORE_IRONMAN.getIndex();
                 break;
             default:
                 return player.getName();
@@ -845,8 +840,8 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
 
-        unlockImage = ImageUtil.getResourceStreamFromClass(getClass(), "/item-unlocked.png");
-        BufferedImage image = ImageUtil.getResourceStreamFromClass(getClass(), "/bronzeman_icon.png");
+        unlockImage = ImageUtil.loadImageResource(getClass(), "/item-unlocked.png");
+        BufferedImage image = ImageUtil.loadImageResource(getClass(), "/bronzeman_icon.png");
         IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
 
         bronzemanIconOffset = modIcons.length;

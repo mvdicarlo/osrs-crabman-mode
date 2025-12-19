@@ -1,6 +1,7 @@
 package mvdicarlo.crabmanmode;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,11 +19,29 @@ public class AzureTableApi {
     private final OkHttpClient httpClient;
     private final String sasUrl;
     private final Gson gson;
+    private Integer pageSize;
 
     public AzureTableApi(String sasUrl, Gson gson, OkHttpClient httpClient) {
         this.httpClient = httpClient;
         this.sasUrl = sasUrl;
         this.gson = gson;
+        this.pageSize = null; // No limit by default
+    }
+
+    /**
+     * Sets the page size for list operations. Useful for testing pagination.
+     * @param pageSize The maximum number of entities to return per page, or null for no limit
+     */
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    /**
+     * Gets the current page size setting.
+     * @return The page size, or null if no limit is set
+     */
+    public Integer getPageSize() {
+        return pageSize;
     }
 
     private static class AzureTableResponse {
@@ -35,10 +54,33 @@ public class AzureTableApi {
         return baseUrl + path + "?" + existingParams + (queryParams.isEmpty() ? "" : "&" + queryParams);
     }
 
+    private static class RequestResult {
+        final String body;
+        final String nextPartitionKey;
+        final String nextRowKey;
+
+        RequestResult(String body, String nextPartitionKey, String nextRowKey) {
+            this.body = body;
+            this.nextPartitionKey = nextPartitionKey;
+            this.nextRowKey = nextRowKey;
+        }
+
+        boolean hasContinuation() {
+            return nextPartitionKey != null && nextRowKey != null;
+        }
+    }
+
     private String sendRequest(Request request) throws Exception {
+        return sendRequestWithContinuation(request).body;
+    }
+
+    private RequestResult sendRequestWithContinuation(Request request) throws Exception {
         try (Response response = httpClient.newCall(request).execute()) {
             if (response.isSuccessful()) {
-                return response.body().string();
+                String body = response.body().string();
+                String nextPartitionKey = response.header("x-ms-continuation-NextPartitionKey");
+                String nextRowKey = response.header("x-ms-continuation-NextRowKey");
+                return new RequestResult(body, nextPartitionKey, nextRowKey);
             } else {
                 throw new Exception("Request failed: " + response.body().string());
             }
@@ -71,21 +113,64 @@ public class AzureTableApi {
     }
 
     public List<UnlockedItemEntity> listEntities(String query) throws Exception {
-        String url = buildUrl("", "$filter=" + query);
-        Request request = createRequestBuilder(url)
-                .get()
-                .build();
-        String jsonResponse = sendRequest(request);
-        return parseJsonListResponse(jsonResponse);
+        List<UnlockedItemEntity> allEntities = new ArrayList<>();
+        String nextPartitionKey = null;
+        String nextRowKey = null;
+
+        do {
+            StringBuilder queryParams = new StringBuilder("$filter=" + query);
+            if (pageSize != null) {
+                queryParams.append("&$top=").append(pageSize);
+            }
+            if (nextPartitionKey != null && nextRowKey != null) {
+                queryParams.append("&NextPartitionKey=").append(nextPartitionKey);
+                queryParams.append("&NextRowKey=").append(nextRowKey);
+            }
+
+            String url = buildUrl("", queryParams.toString());
+            Request request = createRequestBuilder(url)
+                    .get()
+                    .build();
+            RequestResult result = sendRequestWithContinuation(request);
+            allEntities.addAll(parseJsonListResponse(result.body));
+
+            nextPartitionKey = result.nextPartitionKey;
+            nextRowKey = result.nextRowKey;
+        } while (nextPartitionKey != null && nextRowKey != null);
+
+        return allEntities;
     }
 
     public List<UnlockedItemEntity> listEntities() throws Exception {
-        String url = buildUrl("", "");
-        Request request = createRequestBuilder(url)
-                .get()
-                .build();
-        String jsonResponse = sendRequest(request);
-        return parseJsonListResponse(jsonResponse);
+        List<UnlockedItemEntity> allEntities = new ArrayList<>();
+        String nextPartitionKey = null;
+        String nextRowKey = null;
+
+        do {
+            StringBuilder queryParams = new StringBuilder();
+            if (pageSize != null) {
+                queryParams.append("$top=").append(pageSize);
+            }
+            if (nextPartitionKey != null && nextRowKey != null) {
+                if (queryParams.length() > 0) {
+                    queryParams.append("&");
+                }
+                queryParams.append("NextPartitionKey=").append(nextPartitionKey);
+                queryParams.append("&NextRowKey=").append(nextRowKey);
+            }
+
+            String url = buildUrl("", queryParams.toString());
+            Request request = createRequestBuilder(url)
+                    .get()
+                    .build();
+            RequestResult result = sendRequestWithContinuation(request);
+            allEntities.addAll(parseJsonListResponse(result.body));
+
+            nextPartitionKey = result.nextPartitionKey;
+            nextRowKey = result.nextRowKey;
+        } while (nextPartitionKey != null && nextRowKey != null);
+
+        return allEntities;
     }
 
     public void deleteEntity(String partitionKey, String rowKey) throws Exception {

@@ -1,6 +1,5 @@
 package mvdicarlo.crabmanmode;
 
-import lombok.Value;
 import java.time.OffsetDateTime;
 import net.runelite.client.util.AsyncBufferedImage;
 
